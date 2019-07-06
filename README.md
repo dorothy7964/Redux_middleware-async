@@ -1,68 +1,37 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# 로거 미들웨어 만들기
+src/lib/ 디렉토리에, loggerMiddleware.js 파일을 생성
 
-## Available Scripts
+### **`src/lib/loggerMiddleware.js`**
 
-In the project directory, you can run:
+```javascript
+const loggerMiddleware = store => next => action => {
+  /* 미들웨어 내용 */
+}
+```
+여기서 store 와 action 은 익숙하겠지만, next 는 익숙하지 않습니다.  
+`next 는 여기서 store.dispatch`와 비슷한 역할을 하는데요,  
+차이점은, **next(action) 을 했을 때에는 바로 리듀서로 넘기거나, 혹은 미들웨어가 더 있다면 다음 미들웨어 처리가 되도록 진행됩니다.**  
+하지만, store.dispatch 의 경우에는 처음부터 다시 액션이 디스패치 되는 것 이기 때문에 현재 미들웨어를 다시한번 처리하게 됩니다. <br>
 
-### `npm start`
+현재 상태를 한번 기록하고, 방금 전달 받은 액션을 기록하고,  
+그 다음 리듀서에 의해 액션이 처리된 다음의 스토어 값을 기록
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+```javascript
+const loggerMiddleware = store => next => action => {
+  // 현재 스토어 상태값 기록
+  console.log('현재 상태', store.getState());
+  // 액션 기록
+  console.log('액션', action);
 
-The page will reload if you make edits.<br>
-You will also see any lint errors in the console.
+  // 액션을 다음 미들웨어, 혹은 리듀서로 넘김
+  const result = next(action);
 
-### `npm test`
+  // 액션 처리 후의 스토어 상태 기록
+  console.log('다음 상태', store.getState());
+  console.log('\n'); // 기록 구분을 위한 비어있는 줄 프린트
 
-Launches the test runner in the interactive watch mode.<br>
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+  return result; // 여기서 반환하는 값은 store.dispatch(ACTION_TYPE) 했을때의 결과로 설정됩니다
+}
 
-### `npm run build`
-
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
-
-### Analyzing the Bundle Size
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
-
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `npm run build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+export default loggerMiddleware; // 불러와서 사용 할 수 있도록 내보내줍니다.
+```
