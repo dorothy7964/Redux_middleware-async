@@ -1,4 +1,5 @@
 # 로거 미들웨어 만들기
+
 src/lib/ 디렉토리에, loggerMiddleware.js 파일을 생성
 
 ### **`src/lib/loggerMiddleware.js`**
@@ -35,3 +36,43 @@ const loggerMiddleware = store => next => action => {
 
 export default loggerMiddleware; // 불러와서 사용 할 수 있도록 내보내줍니다.
 ```
+
+<br>
+
+# 미들웨어 적용
+
+미들웨어는 store 를 생성 할 때에 설정을 하는데요.  
+redux 모듈 안에 들어있는 applyMiddleware 를 사용하여 설정 할 수 있습니다.
+
+### **`src/store.js`**
+
+```javascript
+import { createStore, applyMiddleware } from 'redux';
+import modules from './modules';
+import loggerMiddleware from './lib/loggerMiddleware';
+
+// 미들웨어가 여러개인경우에는 파라미터로 여러개를 전달해주면 됩니다. 예: applyMiddleware(a,b,c)
+// 미들웨어의 순서는 여기서 전달한 파라미터의 순서대로 지정됩니다.
+const store = createStore(modules, applyMiddleware(loggerMiddleware))
+
+export default store;
+```
+
+### **`src/index.js`**
+
+```javascript
+import React from 'react';
+import ReactDOM from 'react-dom';
+import App from './App';
+import { Provider } from 'react-redux';
+import store from './store'
+
+ReactDOM.render(
+  <Provider store={store}>
+    <App/>
+  </Provider>,
+  document.getElementById('root')
+);
+```
+
+<br>
