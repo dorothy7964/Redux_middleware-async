@@ -1,3 +1,37 @@
+# NPM 설치
+
+```javascript
+yarn add redux react- redux redux-actions
+```
+
+`redux` 리덕스만을 위한 것  
+
+**combineReducers** :  하나의 리듀서로 합쳐 준다  
+
+**createStore** :  데이터 보관 장소  
+
+`react- redux` 리액트에서 리덕스를 사용할 수있게 한다.  
+
+**Provider** :  React App에 Redux를 적용할 때 Provider(공급자)를 사용  
+
+**connect** :  리듀서와 컴포넌트 연결
+
+connect 첫번째 파라미터(mapStateToProps) : 데이터 가져오는 부분  
+connect 두번째 파라미터(mapDispatchToProps) : 액션 가져오는 부분   
+
+`redux-actions` 라이브러리를 활용하여 리덕스 모듈 작성을 더욱 손쉽게 하는 방법  
+
+**createAction**  
+액션 생성 함수를 간편하게 만들수 있게해주는  redux-actions 의 createAction 이라는 함수  
+FSA 규칙을 따르는 액션 객체를 만들어주는데,   
+이 FSA 규칙은 읽기 쉽고, 유용하고, 간단한 액션 객체를 만들기 위해서 만들어졌습니다.  
+
+**handleActions**	  
+이제 이 모듈의 초기 상태와 리듀서를 정의해주겠습니다.   
+리듀서를 만들 땐, redux-actions 의 handleActions 를 사용하면 훨씬 편하게 작성 할 수 있습니다.	  
+
+<br>
+
 # 로거 미들웨어 만들기
 
 src/lib/ 디렉토리에, loggerMiddleware.js 파일을 생성
@@ -73,6 +107,73 @@ ReactDOM.render(
   </Provider>,
   document.getElementById('root')
 );
+```
+
+<br>
+
+# 컴포넌트 App에 연결
+
+### **`src/App.js`**
+
+```javascript
+import React, { Component } from 'react';
+import { bindActionCreators } from 'redux';
+import { connect } from 'react-redux';
+import * as counterActions from './modules/counter';
+
+class App extends Component {
+  render() {
+    const { CounterActions, number } = this.props;
+    return(
+      <div>
+        <h1>{number}</h1>
+        <button onClick={CounterActions.increment}>+</button>
+        <button onClick={CounterActions.decrement}>-</button>
+      </div>
+    );
+  }
+}
+
+export default connect(
+  (state) => ({
+    number: state.counter
+  }),
+  (dispatch) => ({
+    CounterActions: bindActionCreators(counterActions, dispatch)
+  })
+)(App);
+```
+
+<br>
+
+# redux-logger
+오픈소스 커뮤니티에는 더 잘 만들어진 로거 미들웨어 적용하기    
+Redux DevTool 을 사용한다면 redux-logger 는 사실 쓸모가 없습니다.   
+Redux Devtool 이 이미 그 기능을 갖추고있고 훨씬 강력하기 때문이죠.   
+하지만 Redux Devtool 을 사용하지못하는 환경이라면 redux-logger 는 매우 유용한 미들웨어입니다.  
+
+```javascript
+yarn add redux-logger
+```
+
+이전에 만들었던 `lib/loggerMiddleware.js` 로거 미들웨어는 더 이상 사용할 필요가 없어졌으니 삭제하셔도 됩니다.
+
+### **`src/store.js`**
+
+```javascript
+import { createStore, applyMiddleware } from 'redux';
+import modules from './modules';
+
+import { createLogger } from 'redux-logger';
+
+/* 로그 미들웨어를 생성 할 때 설정을 커스터마이징 할 수 있습니다.
+  https://github.com/evgenyrodionov/redux-logger#options
+*/
+const logger = createLogger();
+
+const store = createStore(modules, applyMiddleware(logger))
+
+export default store;
 ```
 
 <br>

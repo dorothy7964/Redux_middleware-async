@@ -10,7 +10,7 @@ class App extends Component {
       <div>
         <h1>{number}</h1>
         <button onClick={CounterActions.increment}>+</button>
-        <button onClick={CounterActions.decrement}>+</button>
+        <button onClick={CounterActions.decrement}>-</button>
       </div>
     );
   }
