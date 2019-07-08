@@ -21,20 +21,20 @@ class App extends Component {
 
   render() {
     const { CounterActions, number, post, error, loading } = this.props;
+    const errorMessage = <h1>Error!!!</h1>
+    const postInfo = (
+      <div>
+        <h1>{post.title}</h1>
+        <p>{post.title}</p>
+      </div>
+    )
     return(
       <div>
         <h1>{number}</h1>
         <button onClick={CounterActions.increment}>+</button>
         <button onClick={CounterActions.decrement}>-</button>
-        { loading && <h2>로딩중...</h2>}
-          { error
-            ? <h1>에러발생!</h1>
-            : (
-                <div>
-                  <h1>{post.title}</h1>
-                  <p>{post.title}</p>
-                </div>
-            )}
+        { loading && <h2>로딩 중...</h2> }
+        { error ? errorMessage : postInfo }
       </div>
     );
   }
