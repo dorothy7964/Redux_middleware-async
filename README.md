@@ -803,7 +803,7 @@ const foo = async () => {
 }
 ```
 
-현재 async await 이 작동하는 이유는 create-react-app 으로 만든 프로젝트에는 babel 의 Async to generator transform 플러그인이 적용되어있기 때문입니다. 만약에 이 플러그인이 설치되어있지 않다면 작동하지 않습니다. 그런 경우에는 이렇게 하면 됩니다:
+현재 `async await 이 작동하는 이유` 는 **create-react-app 으로 만든 프로젝트에는 babel 의 Async to generator transform 플러그인이 적용되어있기 때문** 입니다. 만약에 **이 플러그인이 설치되어있지 않다면 작동하지 않습니다.** 그런 경우에는 이렇게 하면 됩니다:
 
 ```javascript
 getPost = (postId) => {
