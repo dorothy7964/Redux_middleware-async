@@ -311,7 +311,7 @@ import ReduxThunk from 'redux-thunk';
 */
 const logger = createLogger();
 
-const store = createStore(modules, applyMiddleware(logger, ReduxThunk))
+const store = createStore(modules, applyMiddleware(logger, ReduxThunk));
 
 export default store;
 ```
@@ -552,7 +552,7 @@ import { handleActions } from 'redux-actions';
 import axios from 'axios';
 
 function getPostAPI(postId) {
-  return axios.get(`https://jsonplaceholder.typicode.com/posts/${postId}`)
+  return axios.get(`https://jsonplaceholder.typicode.com/posts/${postId}`);
 }
 
 const GET_POST_PENDING = 'GET_POST_PENDING';
@@ -671,7 +671,7 @@ class App extends Component {
 
     // 현재 number 와 새로 받을 number 가 다를 경우에 요청을 시도합니다.
     if(this.props.number !== nextProps.number) {
-      PostActions.getPost(nextProps.number)
+      PostActions.getPost(nextProps.number);
     }
   }
 
@@ -828,3 +828,292 @@ getPost = (postId) => {
 다음 섹션에선 이 미들웨어의 사용법을 배워보도록 하겠습니다.
 
 <br>
+
+# redux-promise-middleware
+
+이 미들웨어는 프로미스 기반의 비동기 작업을 조금 더 편하게 해주는 미들웨어입니다. 우선, 설치와 적용을 먼저 해보도록 하겠습니다.
+
+### 설치와 적용
+
+```javascript
+yarn add redux-promise-middleware
+```
+
+이 미들웨어는, 프로미스가 `payload` 로 전달되면, 요청이 시작, 성공, 실패 할 때 액션의 뒷부분에 `_PENDING`, `_FULFILLED`, `_REJECTED` 를 반환합니다. 이 뒷부분에 붙는 접미사는 커스터마이징 할 수도 있는데요, 우리의 기존 코드에서는 FULFILLED, REJECTED 대신, SUCCESS, FAILURE 를 사용하니, 이를 임의 값으로 설정하도록 하겠습니다.
+
+다음은, 미들웨어를 적용하는 코드입니다.
+
+### **`src/store.js`**
+
+```javascript
+
+import { createStore, applyMiddleware } from 'redux';
+import modules from './modules';
+
+import { createLogger } from 'redux-logger';
+import ReduxThunk from 'redux-thunk';
+import promiseMiddleware from 'redux-promise-middleware';
+
+
+/* 로그 미들웨어를 생성 할 때 설정을 커스터마이징 할 수 있습니다.
+   https://github.com/evgenyrodionov/redux-logger#options
+*/
+const logger = createLogger();
+const customizedPromiseMiddleware = promiseMiddleware({
+  promiseTypeSuffixes: ['LOADING', 'SUCCESS', 'FAILURE']
+});
+
+const store = createStore(modules, applyMiddleware(logger, ReduxThunk, customizedPromiseMiddleware));
+
+export default store;
+```
+
+### 액션 생성자 수정하기
+
+자, 이제 기존의 액션생성자를 수정해보겠습니다. 액션타입 GET_POST 를 만들어주고, 액션 생성자를 다음과 같이 payload 에서 getPostAPI 를 호출해주세요.
+
+### **`src/modules/post.js`**
+
+```javascript
+
+import { handleActions } from 'redux-actions';
+
+import axios from 'axios';
+
+function getPostAPI(postId) {
+  return axios.get(`https://jsonplaceholder.typicode.com/posts/${postId}`)
+}
+
+const GET_POST = 'GET_POST';
+const GET_POST_PENDING = 'GET_POST_PENDING';
+const GET_POST_SUCCESS = 'GET_POST_SUCCESS';
+const GET_POST_FAILURE = 'GET_POST_FAILURE';
+
+export const getPost = (postId) => ({
+  type: GET_POST,
+  payload: getPostAPI(postId)
+})
+
+(...)
+```
+
+어떤가요? 코드가 많이 깔끔해졌죠? 리듀서는 아까 코드를 그대로 사용해도 됩니다.
+
+한번 페이지를 열어 아까처럼 제대로 작동하는지 테스트를 해보세요.
+
+확실히, thunk 를 통하여 직접 하는것보다는 편해졌습니다. 요청의 갯수가 많아져도 앞으로 큰 걱정은 없습니다.
+이 방법도 충분히 편하긴 하지만, 아직 조금의 귀찮음이 남아있습니다.
+
+웹 요청을 하게 될 때, 우리가 가장 신경쓰는 부분은 해당 요청의 결과가 어떻고, 그에 대해서 어떻게 상태를 업데이트 할 지 인데, 이에 대하여 부가적으로 해당 요청이 현재 진행중인지, 그리고 에러가 발생했는지 매번 관리를 해줘야합니다. 이 과정에서, 여전히 `_PENDING`, `_SUCCESS`, `_FAILURE` 액션타입들을 만들어주어야하지요. 그리고 물론, 리듀서에서도 해당 액션타입에 따라 요청상태를 바꾸어주어야합니다.
+
+이 작업은 요청을 할 떄마다 반복적으로 이뤄지는 것이기 때문에, 여러분이 여러분의 방식대로 이 과정을 자동화를 할 수도 있을겁니다.
+
+다음 섹션에서는, 비동기작업을 최대한 간편하게 관리하기위해 제가 만들어서 NPM 에 배포한 **redux-pender** 를 사용하는 방법을 알아보겠습니다.
+
+<br>
+
+# redux-pender
+
+리덕스 펜더는 프로미스 기반 액션들을 관리하기 위한 미들웨어와 도구가 포함되어있는 라이브러리입니다.
+
+작동 방식은 `redux-promise-middleware` 와 매우 유사합니다. `payload` 에 프로미스가 있으면 이 프로미스가 시작하기전, 완료, 실패 했을때 뒤에 PENDING, SUCCESS, FAILURE 접미사를 붙여줍니다.
+
+추가적으로, 요청들을 관리하기위한 리듀서와, 요청관련 액션들을 처리하기위한 액션 핸들러 함수들을 생성해주는 도구가 들어있습니다.
+
+자, 그럼한번 사용해볼까요? 우선 설치부터 해줍시다.
+
+```javascript
+yarn add redux-pender
+```
+
+이제 적용을 해볼건데요, 기존의 `redux-promise-middeware` 는 제거해주세요. 작동 방식이 비슷하기 떄문에 서로 충돌 할 수 있습니다. (만약에 동시에 사용해야되는 경우에는 설정을 하여 충돌을 피할 수 는 있습니다.  
+[자세한 사항은 매뉴얼을 참고해주세요.](https://github.com/velopert/redux-pender)
+
+### **`src/store.js`**
+
+```javascript
+import { createStore, applyMiddleware } from 'redux';
+import modules from './modules';
+
+import { createLogger } from 'redux-logger';
+import ReduxThunk from 'redux-thunk';
+import penderMiddleware from 'redux-pender';
+
+
+/* 로그 미들웨어를 생성 할 때 설정을 커스터마이징 할 수 있습니다.
+  https://github.com/evgenyrodionov/redux-logger#options
+*/
+const logger = createLogger();
+
+const store = createStore(modules, applyMiddleware(logger, ReduxThunk, penderMiddleware()));
+
+export default store;
+```
+
+미들웨어를 적용하고 난 다음에는 리듀서를 추가해주세요.
+
+### **`src/modules/index.js`**
+
+```javascript
+import { combineReducers } from 'redux';
+import counter from './counter';
+import post from './post';
+import { penderReducer } from 'redux-pender';
+
+export default combineReducers({
+  counter,
+  post,
+  pender: penderReducer
+});
+```
+
+이 리듀서는 요청들을 관리하는 리듀서입니다. 이 리듀서의 상태는 다음과 같은 구조를 이루고있는데요.
+
+```javascript
+{
+  pending: {},
+  success: {},
+  failure: {}
+}
+```
+
+새 프로미스 액션이 디스패치되면 상태가 다음과 같이 변하고:
+
+```javascript
+{
+  pending: {
+    'ACTION_NAME': true
+  },
+  success: {
+    'ACTION_NAME': false
+  },
+  failure: {
+    'ACTION_NAME': false
+  }
+}
+```
+
+성공적으로 요청이 완료되면 다음과 같이 변합니다:
+
+```javascript
+{
+  pending: {
+    'ACTION_NAME': false
+  },
+  success: {
+    'ACTION_NAME': true
+  },
+  failure: {
+    'ACTION_NAME': false
+  }
+}
+```
+
+요청이 실패한다면, 예상 가능 하시겠죠?
+
+```javascript
+{
+  pending: {
+    'ACTION_NAME': false
+  },
+  success: {
+    'ACTION_NAME': false
+  },
+  failure: {
+    'ACTION_NAME': true
+  }
+}
+```
+
+이 작업을 이 리듀서가 액션 이름에 따라서 해주기때문에 우리가 따로 관리해줄 필요가 없어집니다.
+
+자, 이제 페이지에 들어가서 테스트를 해보세요.
+
+기존의 `redux-promise-middlewar`e 를 대체 하였지만, 페이지에 들어가보면 기존 코드는 여전히 제대로 작동 할 것입니다.
+작동방식이 서로 비슷하고 뒤에 추가하는 접미사도 (아까 r`edux-promise-middleware` 를 사용할때 커스터마이징을 했기 때문에) 동일하기 때문입니다.
+
+하지만 뭐가 다르냐구요? 액션생성자의 생성 과정과 리듀서에서 액션 처리 과정이 간소화 될 수 있습니다.
+
+다음 코드를 확인하세요:
+
+### **`src/modules/post.js`**
+
+```javascript
+import { createAction, handleActions } from 'redux-actions';
+import { pender } from 'redux-pender';
+
+import axios from 'axios';
+
+function getPostAPI(postId) {
+  return axios.get(`https://jsonplaceholder.typicode.com/posts/${postId}`)
+}
+
+const GET_POST = 'GET_POST';
+/* redux-pender 의 액션 구조는 Flux standard action(https://github.com/acdlite/flux-standard-action)
+   을 따르기 때문에, createAction 으로 액션을 생성 할 수 있습니다. 두번째로 들어가는 파라미터는 프로미스를 반환하는
+   함수여야 합니다.
+*/
+export const getPost = createAction(GET_POST, getPostAPI);
+
+
+const initialState = {
+  // 요청이 진행중인지, 에러가 났는지의 여부는 더 이상 직접 관리 할 필요가 없어집니다. penderReducer 가 담당하기 때문이죠
+  data: {
+    title: '',
+    body: ''
+  }
+}
+
+export default handleActions({
+  ...pender({
+    type: GET_POST, // type 이 주어지면, 이 type 에 접미사를 붙인 액션핸들러들이 담긴 객체를 생성합니다.
+    /*
+        요청중 / 실패 했을 때 추가적으로 해야 할 작업이 있다면 이렇게 onPending 과 onFailure 를 추가해주면됩니다.
+        onPending: (state, action) => state,
+        onFailure: (state, action) => state
+    */
+    onSuccess: (state, action) => { // 성공했을때 해야 할 작업이 따로 없으면 이 함수 또한 생략해도 됩니다.
+      const { title, body } = action.payload.data;
+      return {
+        data: {
+          title,
+          body
+        }
+      }
+    }
+    // 함수가 생략됐을때 기본 값으론 (state, action) => state 가 설정됩니다 (state 를 그대로 반환한다는 것이죠)
+  })
+}, initialState);
+```
+
+어떤가요? 신경써야 할 상태가 줄어들었고, 코드의 길이도 줄어들었죠? 더군다나 리듀서의 가독성도 좋아졌습니다.
+
+이제 post 리듀서에서 error 와 pending 값을 관여하지 않게되었으니, 이를 컴포넌트에서도 반영시켜볼까요?
+
+App 컴포넌트의 마지막, connect 하는 부분의 코드만 조금 수정해주면 됩니다.
+
+### **`src/App.js`**
+
+```javascript
+(...)
+
+export default connect(
+  (state) => ({
+    number: state.counter,
+    post: state.post.data,
+    loading: state.pender.pending['GET_POST'],
+    error: state.pender.failure['GET_POST']
+  }),
+  (dispatch) => ({
+    CounterActions: bindActionCreators(counterActions, dispatch),
+    PostActions: bindActionCreators(postActions, dispatch)
+  })
+)(App);
+```
+
+어떤가요? 웹 요청의 상태관리가 조금은 편해지지 않았나요? 이번 챕터에서 비동기 액션을 처리하는 방식만 3가지를 배웠는데요.
+
+어떤 방식으로 처리를 할 지, 이에 관해서는 정해진 답이 없습니다.
+이번 챕터에서 다룬것들외에도, `redux-observable`, `redux-saga` 등 다른 솔루션들이 있습니다.
+
+어떤 방식을 사용할지는 여러분들의 선택입니다.
