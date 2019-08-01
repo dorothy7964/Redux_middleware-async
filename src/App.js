@@ -7,8 +7,8 @@ import * as postActions from './modules/post';
 class App extends Component {
   componentDidMount() {
     // 컴포넌트가 처음 마운트 될 때 현재 number 를 postId 로 사용하여 포스트 내용을 불러옵니다.
-    const { number, PostActions } = this.props;
-    PostActions.getPost(number);
+    const { number } = this.props;
+    this.getPost(number);
   }
 
   componentWillReceiveProps(nextProps) {
